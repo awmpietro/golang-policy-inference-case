@@ -29,7 +29,6 @@ func (c *Compiler) Compile(dot string) (*Policy, error) {
 		return nil, err
 	}
 
-	// garante start
 	ensureNode(p, p.Start)
 
 	return p, nil
@@ -45,7 +44,6 @@ func walkStmtList(p *Policy, stmts ast.StmtList) error {
 			}
 
 		case ast.NodeStmt:
-			// caso venha como valor
 			tmp := s
 			if err := applyNodeStmt(p, &tmp); err != nil {
 				return err
@@ -57,7 +55,6 @@ func walkStmtList(p *Policy, stmts ast.StmtList) error {
 			}
 
 		case ast.EdgeStmt:
-			// caso venha como valor
 			tmp := s
 			if err := applyEdgeStmt(p, &tmp); err != nil {
 				return err
