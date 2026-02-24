@@ -12,7 +12,6 @@ type edgeSpec struct {
 	Cond string
 }
 
-// split por ';' sem quebrar dentro de "..."
 func splitStatements(dot string) []string {
 	var out []string
 	var b strings.Builder
@@ -51,7 +50,6 @@ func splitStatements(dot string) []string {
 	return out
 }
 
-// match: start -> approved [ ... ]
 var edgeStmtRe = regexp.MustCompile(`^\s*([A-Za-z_][A-Za-z0-9_]*)\s*->\s*([A-Za-z_][A-Za-z0-9_]*)\s*(\[(.*)\])?\s*$`)
 var condRe = regexp.MustCompile(`cond\s*=\s*"([^"]*)"`)
 
@@ -60,14 +58,12 @@ func extractEdgesInTextOrder(dot string) ([]edgeSpec, error) {
 	out := make([]edgeSpec, 0)
 
 	for _, s := range stmts {
-		// ignora linhas que não são edges
 		if !strings.Contains(s, "->") {
 			continue
 		}
 
 		m := edgeStmtRe.FindStringSubmatch(s)
 		if m == nil {
-			// se contém "->" mas não casou, retorna erro pra não “aceitar errado”
 			return nil, fmt.Errorf("unsupported edge statement: %q", s)
 		}
 
@@ -75,7 +71,7 @@ func extractEdgesInTextOrder(dot string) ([]edgeSpec, error) {
 		to := m[2]
 		attrs := ""
 		if len(m) >= 5 {
-			attrs = m[4] // dentro de [ ... ]
+			attrs = m[4]
 		}
 
 		cond := ""
