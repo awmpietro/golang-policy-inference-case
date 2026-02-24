@@ -1,0 +1,20 @@
+digraph Policy {
+
+  start [result=""]
+
+  approved [
+    result="approved=true,segment=prime"
+  ]
+
+  rejected [
+    result="approved=false"
+  ]
+
+  review [
+    result="approved=false,segment=manual"
+  ]
+
+  start -> approved [cond="age>=18 && score>700"]
+  start -> review   [cond="age>=18 && score<=700"]
+  start -> rejected [cond="age<18"]
+}
