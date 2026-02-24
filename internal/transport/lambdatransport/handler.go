@@ -28,7 +28,6 @@ type InferResponse struct {
 	Output map[string]any `json:"output"`
 }
 
-// Infer assume que o API Gateway já roteou POST /infer.
 func (h *Handler) Infer(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
 	body, err := readBody(req)
 	if err != nil {
