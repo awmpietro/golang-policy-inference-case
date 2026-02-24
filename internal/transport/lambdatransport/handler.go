@@ -15,8 +15,16 @@ type Inferer interface {
 	Infer(policyDOT string, input map[string]any) (map[string]any, error)
 }
 
+type VersionedInferer interface {
+	InferWithOptions(policyDOT string, input map[string]any, opts app.InferOptions) (map[string]any, *app.PolicyInfo, error)
+}
+
 type DebugInferer interface {
 	InferWithTrace(policyDOT string, input map[string]any) (map[string]any, *app.InferTrace, error)
+}
+
+type VersionedDebugInferer interface {
+	InferWithTraceAndOptions(policyDOT string, input map[string]any, opts app.InferOptions) (map[string]any, *app.InferTrace, *app.PolicyInfo, error)
 }
 
 type Handler struct {
@@ -30,12 +38,15 @@ func NewHandler(svc Inferer) *Handler {
 type InferRequest struct {
 	PolicyDOT string         `json:"policy_dot"`
 	Input     map[string]any `json:"input"`
+	PolicyID  string         `json:"policy_id,omitempty"`
+	Version   string         `json:"policy_version,omitempty"`
 	Debug     bool           `json:"debug,omitempty"`
 }
 
 type InferResponse struct {
 	Output map[string]any  `json:"output"`
 	Trace  *app.InferTrace `json:"trace,omitempty"`
+	Policy *app.PolicyInfo `json:"policy,omitempty"`
 }
 
 func (h *Handler) Infer(ctx context.Context, req events.APIGatewayV2HTTPRequest) (events.APIGatewayV2HTTPResponse, error) {
@@ -50,6 +61,14 @@ func (h *Handler) Infer(ctx context.Context, req events.APIGatewayV2HTTPRequest)
 	}
 
 	if in.Debug {
+		opts := app.InferOptions{PolicyID: in.PolicyID, PolicyVersion: in.Version}
+		if svc, ok := h.svc.(VersionedDebugInferer); ok {
+			out, trace, info, err := svc.InferWithTraceAndOptions(in.PolicyDOT, in.Input, opts)
+			if err != nil {
+				return jsonResp(http.StatusBadRequest, map[string]any{"error": "infer failed", "details": err.Error(), "trace": trace, "policy": info}), nil
+			}
+			return jsonResp(http.StatusOK, InferResponse{Output: out, Trace: trace, Policy: info}), nil
+		}
 		if svc, ok := h.svc.(DebugInferer); ok {
 			out, trace, err := svc.InferWithTrace(in.PolicyDOT, in.Input)
 			if err != nil {
@@ -57,6 +76,15 @@ func (h *Handler) Infer(ctx context.Context, req events.APIGatewayV2HTTPRequest)
 			}
 			return jsonResp(http.StatusOK, InferResponse{Output: out, Trace: trace}), nil
 		}
+	}
+
+	opts := app.InferOptions{PolicyID: in.PolicyID, PolicyVersion: in.Version}
+	if svc, ok := h.svc.(VersionedInferer); ok {
+		out, info, err := svc.InferWithOptions(in.PolicyDOT, in.Input, opts)
+		if err != nil {
+			return jsonResp(http.StatusBadRequest, map[string]any{"error": "infer failed", "details": err.Error(), "policy": info}), nil
+		}
+		return jsonResp(http.StatusOK, InferResponse{Output: out, Policy: info}), nil
 	}
 
 	out, err := h.svc.Infer(in.PolicyDOT, in.Input)
