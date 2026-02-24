@@ -6,7 +6,7 @@ import (
 	"github.com/awmpietro/golang-policy-inference-case/internal/app"
 	"github.com/awmpietro/golang-policy-inference-case/internal/policy"
 	"github.com/awmpietro/golang-policy-inference-case/internal/policy/cache"
-	lambdatransport "github.com/awmpietro/golang-policy-inference-case/internal/transport/lambda"
+	lambdatransport "github.com/awmpietro/golang-policy-inference-case/internal/transport/lambdatransport"
 )
 
 func main() {

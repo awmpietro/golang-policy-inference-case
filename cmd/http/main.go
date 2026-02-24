@@ -7,7 +7,7 @@ import (
 	"github.com/awmpietro/golang-policy-inference-case/internal/app"
 	"github.com/awmpietro/golang-policy-inference-case/internal/policy"
 	"github.com/awmpietro/golang-policy-inference-case/internal/policy/cache"
-	httptransport "github.com/awmpietro/golang-policy-inference-case/internal/transport/http"
+	httptransport "github.com/awmpietro/golang-policy-inference-case/internal/transport/httptransport"
 )
 
 func main() {
