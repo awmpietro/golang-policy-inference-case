@@ -30,7 +30,7 @@ func (e *Engine) Run(p *Policy, vars map[string]any) error {
 	current := start
 	const maxSteps = 10_000
 
-	for step := 0; step < maxSteps; step++ {
+	for range maxSteps {
 		node := p.Nodes[current]
 		if node == nil {
 			return fmt.Errorf("unknown node %q", current)
