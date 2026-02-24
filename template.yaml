@@ -1,0 +1,24 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: Policy DAG Inference
+
+Globals:
+  Function:
+    Timeout: 5
+    MemorySize: 256
+
+Resources:
+  InferFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Runtime: provided.al2023
+      Architectures:
+        - arm64
+      Handler: bootstrap
+      CodeUri: build/
+      Events:
+        Infer:
+          Type: HttpApi
+          Properties:
+            Path: /infer
+            Method: POST
