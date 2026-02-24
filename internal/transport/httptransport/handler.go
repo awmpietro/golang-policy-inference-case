@@ -3,15 +3,17 @@ package httptransport
 import (
 	"encoding/json"
 	"net/http"
-
-	"github.com/awmpietro/golang-policy-inference-case/internal/app"
 )
 
-type Handler struct {
-	svc *app.Service
+type Inferer interface {
+	Infer(policyDOT string, input map[string]any) (map[string]any, error)
 }
 
-func NewHandler(svc *app.Service) *Handler {
+type Handler struct {
+	svc Inferer
+}
+
+func NewHandler(svc Inferer) *Handler {
 	return &Handler{svc: svc}
 }
 
