@@ -12,7 +12,10 @@ import (
 
 func main() {
 	compiler := policy.NewCompiler()
-	engine := policy.NewEngine(policy.ExprEvaluator{})
+	engine := policy.NewEngine(
+		policy.ExprEvaluator{},
+		policy.WithNodeLatencyObserver(policy.NewNodeLatencyLogger(log.Default())),
+	)
 	c := cache.NewInMemory(1024)
 
 	svc := app.NewService(compiler, engine, c)

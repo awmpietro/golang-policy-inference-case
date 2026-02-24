@@ -1,6 +1,8 @@
 package main
 
 import (
+	"log"
+
 	"github.com/aws/aws-lambda-go/lambda"
 
 	"github.com/awmpietro/golang-policy-inference-case/internal/app"
@@ -11,7 +13,10 @@ import (
 
 func main() {
 	compiler := policy.NewCompiler()
-	engine := policy.NewEngine(policy.ExprEvaluator{})
+	engine := policy.NewEngine(
+		policy.ExprEvaluator{},
+		policy.WithNodeLatencyObserver(policy.NewNodeLatencyLogger(log.Default())),
+	)
 	c := cache.NewInMemory(1024)
 
 	svc := app.NewService(compiler, engine, c)
