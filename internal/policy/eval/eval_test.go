@@ -77,3 +77,24 @@ func TestEval_MissingVariableReturnsTypedError(t *testing.T) {
 		t.Fatalf("expected missing [score], got %#v", mvErr.Vars)
 	}
 }
+
+func TestEval_EmptyConditionReturnsTrue(t *testing.T) {
+	ok, err := Eval("", map[string]any{"age": 20})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatalf("expected true for empty condition")
+	}
+}
+
+func TestEval_QuotedStringComparison(t *testing.T) {
+	vars := map[string]any{"name": "Alice Smith"}
+	ok, err := Eval(`name=="Alice Smith"`, vars)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatalf("expected true")
+	}
+}
