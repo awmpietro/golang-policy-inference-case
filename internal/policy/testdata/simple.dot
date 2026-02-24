@@ -1,0 +1,8 @@
+digraph {
+  start [result=""]
+  ok [result="approved=true"]
+  no [result="approved=false"]
+
+  start -> ok [cond="age>=18"]
+  start -> no [cond="age<18"]
+}
