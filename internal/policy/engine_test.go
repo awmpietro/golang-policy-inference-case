@@ -239,3 +239,64 @@ func TestEngine_RunWithTrace_ReturnsVisitedPathAndSteps(t *testing.T) {
 		t.Fatalf("expected first step chosen next approved, got %#v", trace.Steps[0].ChosenNext)
 	}
 }
+
+func TestEngine_RunWithTrace_NoEdgeMatchedTerminates(t *testing.T) {
+	p := &Policy{
+		Start: "start",
+		Nodes: map[string]*Node{
+			"start": {
+				ID: "start",
+				Outgoing: []Edge{
+					{To: "A", Cond: "c1"},
+				},
+			},
+			"A": {ID: "A"},
+		},
+	}
+
+	e := NewEngine(fakeEval{
+		fn: func(cond string, vars map[string]any) (bool, error) {
+			return false, nil
+		},
+	})
+
+	trace, err := e.RunWithTrace(p, map[string]any{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if trace == nil || trace.Terminated != "no_edge_matched" {
+		t.Fatalf("expected no_edge_matched termination, got %#v", trace)
+	}
+	if len(trace.VisitedPath) != 1 || trace.VisitedPath[0] != "start" {
+		t.Fatalf("unexpected visited path: %#v", trace.VisitedPath)
+	}
+}
+
+func TestEngine_RunWithTrace_MissingVarsIncludesTraceOnError(t *testing.T) {
+	compiler := NewCompiler()
+	p, err := compiler.Compile(`digraph {
+		start -> approved [cond="age>=18 && score>700"];
+		approved [result="approved=true"];
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	e := NewEngine(ExprEvaluator{})
+	trace, err := e.RunWithTrace(p, map[string]any{"age": 20})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if trace == nil {
+		t.Fatalf("expected trace even on error")
+	}
+	if trace.Terminated != "error_no_edge_matched_missing_vars" {
+		t.Fatalf("unexpected termination: %q", trace.Terminated)
+	}
+	if len(trace.Steps) == 0 || len(trace.Steps[0].Edges) == 0 {
+		t.Fatalf("expected edge trace details, got %#v", trace.Steps)
+	}
+	if trace.Steps[0].Edges[0].Error == "" {
+		t.Fatalf("expected edge error details in trace")
+	}
+}
