@@ -1,4 +1,4 @@
-.PHONY: test test-race test-cover bench bench-profile load-test perf-check build-lambda sam
+.PHONY: test test-race test-cover bench bench-profile load-test perf-check docker-build docker-run build-lambda sam
 
 test:
 	go test ./...
@@ -21,6 +21,12 @@ load-test:
 	go run ./cmd/loadtest -url http://localhost:8080/infer -rps 50 -duration 60s -workers 50
 
 perf-check: bench load-test
+
+docker-build:
+	docker build -t policy-inference:local .
+
+docker-run: docker-build
+	docker run --rm -p 8080:8080 --name policy-inference policy-inference:local
 
 build-lambda:
 	mkdir -p build
