@@ -1,1 +1,0 @@
-# Camada de Cache em memória
