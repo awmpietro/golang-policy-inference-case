@@ -1,5 +1,7 @@
 package policy
 
+import "github.com/awmpietro/golang-policy-inference-case/internal/policy/eval"
+
 type Policy struct {
 	Start string
 	Nodes map[string]*Node
@@ -12,8 +14,9 @@ type Node struct {
 }
 
 type Edge struct {
-	To   string
-	Cond string
+	To           string
+	Cond         string
+	CompiledCond *eval.Compiled
 }
 
 type Assignment struct {

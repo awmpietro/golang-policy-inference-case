@@ -3,6 +3,7 @@ package policy
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -116,5 +117,25 @@ func TestEngine_Run_CondEvalErrorBubbles(t *testing.T) {
 	err := e.Run(p, vars)
 	if err == nil {
 		t.Fatalf("expected error, got nil")
+	}
+}
+
+func TestEngine_Run_NoEdgeMatchedReportsMissingVars(t *testing.T) {
+	compiler := NewCompiler()
+	p, err := compiler.Compile(`digraph {
+		start -> approved [cond="age>=18 && score>700"];
+	}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	e := NewEngine(ExprEvaluator{})
+	err = e.Run(p, map[string]any{"age": 20})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+
+	if !strings.Contains(err.Error(), `missing input vars [score]`) {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }

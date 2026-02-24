@@ -2,6 +2,7 @@ package policy
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/awalterschulze/gographviz"
@@ -30,6 +31,9 @@ func (c *Compiler) Compile(dot string) (*Policy, error) {
 	}
 
 	ensureNode(p, p.Start)
+	if err := validateAcyclic(p); err != nil {
+		return nil, err
+	}
 
 	return p, nil
 }
@@ -100,7 +104,8 @@ func applyEdgeStmt(p *Policy, es *ast.EdgeStmt) error {
 	attrs := es.Attrs.GetMap()
 	cond := strings.TrimSpace(unquote(attrs["cond"]))
 
-	if err := eval.Validate(cond); err != nil {
+	compiledCond, err := eval.Compile(cond)
+	if err != nil {
 		return fmt.Errorf("edge %s invalid cond: %w", from, err)
 	}
 
@@ -114,13 +119,16 @@ func applyEdgeStmt(p *Policy, es *ast.EdgeStmt) error {
 		ensureNode(p, to)
 
 		edgeCond := ""
+		var edgeCompiled *eval.Compiled
 		if i == 0 {
 			edgeCond = cond
+			edgeCompiled = compiledCond
 		}
 
 		p.Nodes[prev].Outgoing = append(p.Nodes[prev].Outgoing, Edge{
-			To:   to,
-			Cond: edgeCond,
+			To:           to,
+			Cond:         edgeCond,
+			CompiledCond: edgeCompiled,
 		})
 
 		prev = to
@@ -150,4 +158,60 @@ func unquote(s string) string {
 	}
 
 	return s
+}
+
+func validateAcyclic(p *Policy) error {
+	const (
+		unseen = iota
+		visiting
+		done
+	)
+
+	colors := make(map[string]int, len(p.Nodes))
+	stack := make([]string, 0, len(p.Nodes))
+	pos := make(map[string]int, len(p.Nodes))
+
+	var dfs func(string) error
+	dfs = func(id string) error {
+		colors[id] = visiting
+		pos[id] = len(stack)
+		stack = append(stack, id)
+
+		for _, edge := range p.Nodes[id].Outgoing {
+			next := edge.To
+			switch colors[next] {
+			case unseen:
+				if err := dfs(next); err != nil {
+					return err
+				}
+			case visiting:
+				start := pos[next]
+				cycle := append([]string{}, stack[start:]...)
+				cycle = append(cycle, next)
+				return fmt.Errorf("policy graph contains cycle: %s", strings.Join(cycle, " -> "))
+			}
+		}
+
+		stack = stack[:len(stack)-1]
+		delete(pos, id)
+		colors[id] = done
+		return nil
+	}
+
+	ids := make([]string, 0, len(p.Nodes))
+	for id := range p.Nodes {
+		ids = append(ids, id)
+	}
+	sort.Strings(ids)
+
+	for _, id := range ids {
+		if colors[id] != unseen {
+			continue
+		}
+		if err := dfs(id); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

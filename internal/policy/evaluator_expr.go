@@ -7,3 +7,7 @@ type ExprEvaluator struct{}
 func (ExprEvaluator) Eval(cond string, vars map[string]any) (bool, error) {
 	return eval.Eval(cond, vars)
 }
+
+func (ExprEvaluator) EvalCompiled(compiled *eval.Compiled, vars map[string]any) (bool, error) {
+	return eval.Run(compiled, vars)
+}
