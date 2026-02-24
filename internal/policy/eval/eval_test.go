@@ -1,6 +1,9 @@
 package eval
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 func TestEval_ComparisonsAndLogic(t *testing.T) {
 	vars := map[string]any{
@@ -56,5 +59,21 @@ func TestValidate_AllowsParentheses(t *testing.T) {
 	}
 	if !ok {
 		t.Fatalf("expected true")
+	}
+}
+
+func TestEval_MissingVariableReturnsTypedError(t *testing.T) {
+	_, err := Eval(`age>=18 && score>700`, map[string]any{"age": 20})
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+
+	var mvErr *MissingVariablesError
+	if !errors.As(err, &mvErr) {
+		t.Fatalf("expected MissingVariablesError, got %T (%v)", err, err)
+	}
+
+	if len(mvErr.Vars) != 1 || mvErr.Vars[0] != "score" {
+		t.Fatalf("expected missing [score], got %#v", mvErr.Vars)
 	}
 }

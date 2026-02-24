@@ -1,9 +1,20 @@
 package policy
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+	"sort"
+	"strings"
+
+	"github.com/awmpietro/golang-policy-inference-case/internal/policy/eval"
+)
 
 type Evaluator interface {
 	Eval(cond string, vars map[string]any) (bool, error)
+}
+
+type CompiledEvaluator interface {
+	EvalCompiled(compiled *eval.Compiled, vars map[string]any) (bool, error)
 }
 
 type Engine struct {
@@ -46,11 +57,20 @@ func (e *Engine) Run(p *Policy, vars map[string]any) error {
 
 		found := false
 		next := ""
+		errs := make([]string, 0, len(node.Outgoing))
+		missingVars := map[string]struct{}{}
 
 		for _, edge := range node.Outgoing {
-			ok, err := e.eval.Eval(edge.Cond, vars)
+			ok, err := e.evalEdge(edge, vars)
 			if err != nil {
-				return fmt.Errorf("cond eval failed at %s -> %s: %w", current, edge.To, err)
+				errs = append(errs, fmt.Sprintf("%s -> %s (%q): %v", current, edge.To, edge.Cond, err))
+				var mvErr *eval.MissingVariablesError
+				if errors.As(err, &mvErr) {
+					for _, name := range mvErr.Vars {
+						missingVars[name] = struct{}{}
+					}
+				}
+				continue
 			}
 			if ok {
 				next = edge.To
@@ -60,6 +80,16 @@ func (e *Engine) Run(p *Policy, vars map[string]any) error {
 		}
 
 		if !found {
+			if len(errs) > 0 {
+				if len(missingVars) > 0 {
+					return fmt.Errorf("no edge matched at node %q: missing input vars [%s]; eval details: %s",
+						current,
+						joinSortedKeys(missingVars),
+						strings.Join(errs, "; "),
+					)
+				}
+				return fmt.Errorf("no edge matched at node %q: eval details: %s", current, strings.Join(errs, "; "))
+			}
 			return nil
 		}
 
@@ -67,4 +97,26 @@ func (e *Engine) Run(p *Policy, vars map[string]any) error {
 	}
 
 	return fmt.Errorf("maxSteps exceeded (possible cycle or huge graph)")
+}
+
+func (e *Engine) evalEdge(edge Edge, vars map[string]any) (bool, error) {
+	if edge.CompiledCond != nil {
+		if ce, ok := e.eval.(CompiledEvaluator); ok {
+			return ce.EvalCompiled(edge.CompiledCond, vars)
+		}
+	}
+	return e.eval.Eval(edge.Cond, vars)
+}
+
+func joinSortedKeys(items map[string]struct{}) string {
+	if len(items) == 0 {
+		return ""
+	}
+
+	keys := make([]string, 0, len(items))
+	for k := range items {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return strings.Join(keys, ", ")
 }
