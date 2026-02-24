@@ -192,3 +192,50 @@ func TestEngine_Run_ObservesNodeLatencyPerVisitedNode(t *testing.T) {
 		}
 	}
 }
+
+func TestEngine_RunWithTrace_ReturnsVisitedPathAndSteps(t *testing.T) {
+	p := &Policy{
+		Start: "start",
+		Nodes: map[string]*Node{
+			"start": {
+				ID: "start",
+				Outgoing: []Edge{
+					{To: "approved", Cond: "ok"},
+					{To: "rejected", Cond: "no"},
+				},
+			},
+			"approved": {ID: "approved", Result: []Assignment{{Key: "approved", Value: true}}},
+			"rejected": {ID: "rejected", Result: []Assignment{{Key: "approved", Value: false}}},
+		},
+	}
+
+	e := NewEngine(fakeEval{
+		fn: func(cond string, vars map[string]any) (bool, error) {
+			return cond == "ok", nil
+		},
+	})
+
+	vars := map[string]any{}
+	trace, err := e.RunWithTrace(p, vars)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if vars["approved"] != true {
+		t.Fatalf("expected approved=true, got %#v", vars["approved"])
+	}
+	if trace == nil {
+		t.Fatalf("expected trace")
+	}
+	if trace.Terminated != "leaf" {
+		t.Fatalf("expected termination leaf, got %q", trace.Terminated)
+	}
+	if len(trace.VisitedPath) != 2 || trace.VisitedPath[0] != "start" || trace.VisitedPath[1] != "approved" {
+		t.Fatalf("unexpected visited path: %#v", trace.VisitedPath)
+	}
+	if len(trace.Steps) != 2 {
+		t.Fatalf("expected 2 steps, got %d", len(trace.Steps))
+	}
+	if trace.Steps[0].ChosenNext != "approved" {
+		t.Fatalf("expected first step chosen next approved, got %#v", trace.Steps[0].ChosenNext)
+	}
+}
