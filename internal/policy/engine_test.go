@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 )
 
 type fakeEval struct {
@@ -13,6 +14,16 @@ type fakeEval struct {
 
 func (f fakeEval) Eval(cond string, vars map[string]any) (bool, error) {
 	return f.fn(cond, vars)
+}
+
+type spyLatencyObserver struct {
+	nodes []string
+	durs  []time.Duration
+}
+
+func (s *spyLatencyObserver) ObserveNodeLatency(nodeID string, duration time.Duration) {
+	s.nodes = append(s.nodes, nodeID)
+	s.durs = append(s.durs, duration)
 }
 
 func TestParseResult(t *testing.T) {
@@ -137,5 +148,47 @@ func TestEngine_Run_NoEdgeMatchedReportsMissingVars(t *testing.T) {
 
 	if !strings.Contains(err.Error(), `missing input vars [score]`) {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestEngine_Run_ObservesNodeLatencyPerVisitedNode(t *testing.T) {
+	p := &Policy{
+		Start: "start",
+		Nodes: map[string]*Node{
+			"start": {
+				ID: "start",
+				Outgoing: []Edge{
+					{To: "A", Cond: "true"},
+				},
+			},
+			"A": {ID: "A", Result: []Assignment{{Key: "done", Value: true}}},
+		},
+	}
+
+	observer := &spyLatencyObserver{}
+	e := NewEngine(
+		fakeEval{
+			fn: func(cond string, vars map[string]any) (bool, error) {
+				return true, nil
+			},
+		},
+		WithNodeLatencyObserver(observer),
+	)
+
+	vars := map[string]any{}
+	if err := e.Run(p, vars); err != nil {
+		t.Fatal(err)
+	}
+
+	if len(observer.nodes) != 2 {
+		t.Fatalf("expected 2 observed nodes, got %d", len(observer.nodes))
+	}
+	if observer.nodes[0] != "start" || observer.nodes[1] != "A" {
+		t.Fatalf("unexpected nodes observed: %#v", observer.nodes)
+	}
+	for i, d := range observer.durs {
+		if d < 0 {
+			t.Fatalf("duration at %d is negative: %v", i, d)
+		}
 	}
 }

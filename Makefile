@@ -1,4 +1,14 @@
-.PHONY: build-lambda sam
+.PHONY: test test-race test-cover build-lambda sam
+
+test:
+	go test ./...
+
+test-race:
+	go test -race ./...
+
+test-cover:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -func=coverage.out
 
 build-lambda:
 	mkdir -p build

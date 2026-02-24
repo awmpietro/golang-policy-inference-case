@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/awmpietro/golang-policy-inference-case/internal/policy/eval"
 )
@@ -18,11 +19,24 @@ type CompiledEvaluator interface {
 }
 
 type Engine struct {
-	eval Evaluator
+	eval            Evaluator
+	latencyObserver NodeLatencyObserver
 }
 
-func NewEngine(eval Evaluator) *Engine {
-	return &Engine{eval: eval}
+type EngineOption func(*Engine)
+
+func WithNodeLatencyObserver(observer NodeLatencyObserver) EngineOption {
+	return func(e *Engine) {
+		e.latencyObserver = observer
+	}
+}
+
+func NewEngine(eval Evaluator, opts ...EngineOption) *Engine {
+	e := &Engine{eval: eval}
+	for _, opt := range opts {
+		opt(e)
+	}
+	return e
 }
 
 func (e *Engine) Run(p *Policy, vars map[string]any) error {
@@ -42,8 +56,10 @@ func (e *Engine) Run(p *Policy, vars map[string]any) error {
 	const maxSteps = 10_000
 
 	for range maxSteps {
+		nodeStart := time.Now()
 		node := p.Nodes[current]
 		if node == nil {
+			e.observeNodeLatency(current, time.Since(nodeStart))
 			return fmt.Errorf("unknown node %q", current)
 		}
 
@@ -52,6 +68,7 @@ func (e *Engine) Run(p *Policy, vars map[string]any) error {
 		}
 
 		if len(node.Outgoing) == 0 {
+			e.observeNodeLatency(current, time.Since(nodeStart))
 			return nil
 		}
 
@@ -80,6 +97,7 @@ func (e *Engine) Run(p *Policy, vars map[string]any) error {
 		}
 
 		if !found {
+			e.observeNodeLatency(current, time.Since(nodeStart))
 			if len(errs) > 0 {
 				if len(missingVars) > 0 {
 					return fmt.Errorf("no edge matched at node %q: missing input vars [%s]; eval details: %s",
@@ -93,10 +111,18 @@ func (e *Engine) Run(p *Policy, vars map[string]any) error {
 			return nil
 		}
 
+		e.observeNodeLatency(current, time.Since(nodeStart))
 		current = next
 	}
 
 	return fmt.Errorf("maxSteps exceeded (possible cycle or huge graph)")
+}
+
+func (e *Engine) observeNodeLatency(nodeID string, duration time.Duration) {
+	if e.latencyObserver == nil {
+		return
+	}
+	e.latencyObserver.ObserveNodeLatency(nodeID, duration)
 }
 
 func (e *Engine) evalEdge(edge Edge, vars map[string]any) (bool, error) {
