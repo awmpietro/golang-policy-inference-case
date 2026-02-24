@@ -12,9 +12,11 @@ import (
 
 func main() {
 	compiler := policy.NewCompiler()
+	latencyObserver := policy.NewAsyncNodeLatencyObserver(policy.NewNodeLatencyLogger(log.Default()), 4096)
+	defer latencyObserver.Close()
 	engine := policy.NewEngine(
 		policy.ExprEvaluator{},
-		policy.WithNodeLatencyObserver(policy.NewNodeLatencyLogger(log.Default())),
+		policy.WithNodeLatencyObserver(latencyObserver),
 	)
 	c := cache.NewInMemory(1024)
 
