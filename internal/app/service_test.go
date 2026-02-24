@@ -29,6 +29,21 @@ func (f *fakeEngine) Run(p *policy.Policy, vars map[string]any) error {
 	return f.fn(p, vars)
 }
 
+type fakeTraceEngine struct {
+	fakeEngine
+	trace *policy.ExecutionTrace
+}
+
+func (f *fakeTraceEngine) RunWithTrace(p *policy.Policy, vars map[string]any) (*policy.ExecutionTrace, error) {
+	f.calls++
+	if f.fakeEngine.fn != nil {
+		if err := f.fakeEngine.fn(p, vars); err != nil {
+			return f.trace, err
+		}
+	}
+	return f.trace, nil
+}
+
 type fakeCache struct {
 	calls int
 	// simples: sempre chama compute (podemos melhorar no teste)
@@ -87,5 +102,61 @@ func TestService_Infer_BubblesUpErrors(t *testing.T) {
 	_, err := s.Infer("x", map[string]any{})
 	if err == nil {
 		t.Fatalf("expected error")
+	}
+}
+
+func TestService_InferWithTrace_UsesTraceEngine(t *testing.T) {
+	comp := &fakeCompiler{
+		p: &policy.Policy{Start: "start", Nodes: map[string]*policy.Node{"start": {ID: "start"}}},
+	}
+	eng := &fakeTraceEngine{
+		fakeEngine: fakeEngine{
+			fn: func(p *policy.Policy, vars map[string]any) error {
+				vars["approved"] = true
+				return nil
+			},
+		},
+		trace: &policy.ExecutionTrace{
+			StartNode:   "start",
+			VisitedPath: []string{"start"},
+			Terminated:  "leaf",
+		},
+	}
+
+	s := NewService(comp, eng, &fakeCache{})
+
+	out, trace, err := s.InferWithTrace("digraph { start [result=\"approved=true\"]; }", map[string]any{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out["approved"] != true {
+		t.Fatalf("expected approved=true in output")
+	}
+	if trace == nil || trace.StartNode != "start" {
+		t.Fatalf("expected trace from engine, got %#v", trace)
+	}
+}
+
+func TestService_InferWithTrace_FallsBackWhenEngineHasNoTrace(t *testing.T) {
+	comp := &fakeCompiler{
+		p: &policy.Policy{Start: "start", Nodes: map[string]*policy.Node{"start": {ID: "start"}}},
+	}
+	eng := &fakeEngine{
+		fn: func(p *policy.Policy, vars map[string]any) error {
+			vars["approved"] = true
+			return nil
+		},
+	}
+
+	s := NewService(comp, eng, &fakeCache{})
+	out, trace, err := s.InferWithTrace("digraph { start [result=\"approved=true\"]; }", map[string]any{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if out["approved"] != true {
+		t.Fatalf("expected approved=true in output")
+	}
+	if trace != nil {
+		t.Fatalf("expected nil trace fallback, got %#v", trace)
 	}
 }
