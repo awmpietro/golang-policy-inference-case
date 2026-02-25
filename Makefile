@@ -26,7 +26,7 @@ docker-build:
 	docker build -t policy-inference:local .
 
 docker-run: docker-build
-	docker run --rm -p 8080:8080 --name policy-inference policy-inference:local
+	docker run --rm --env-file .env -p 8080:8080 --name policy-inference policy-inference:local
 
 build-lambda:
 	mkdir -p build
