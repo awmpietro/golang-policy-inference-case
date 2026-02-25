@@ -122,6 +122,15 @@ Variáveis usadas:
 - `POLICY_MAX_STEPS`: limite de passos por execução
 - `POLICY_OBS_BUFFER`: buffer do observer assíncrono
 
+## Pré-requisitos
+- Go `1.25.1` (versão usada no projeto)
+- Docker Desktop (ou runtime compatível com Docker)
+- AWS SAM CLI (para rodar Lambda local com `sam local`)
+- GNU Make
+
+Opcional:
+- `jq` para visualizar JSON no terminal
+
 ## Como rodar
 Criei dois modos de transporte. AWS Lambda como solicitado nas intruções e também HTTP dockerizado, para facilitar rodar local.
 
