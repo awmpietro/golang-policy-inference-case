@@ -31,5 +31,5 @@ go.work.sum
 # .idea/
 # .vscode/
 
-# Local temporary documentation workspace
 /tmp/
+/build/
