@@ -107,10 +107,13 @@ func (s *Service) prepare(policyDOT string, input map[string]any, opts InferOpti
 	}
 
 	policyHash := hash(policyDOT)
-	info := &PolicyInfo{
-		ID:      opts.PolicyID,
-		Version: opts.PolicyVersion,
-		Hash:    policyHash,
+	var info *PolicyInfo
+	if opts.PolicyID != "" {
+		info = &PolicyInfo{
+			ID:      opts.PolicyID,
+			Version: opts.PolicyVersion,
+			Hash:    policyHash,
+		}
 	}
 
 	p, err := s.cache.GetOrCompute(cacheKey(opts, policyHash), func() (*policy.Policy, error) {

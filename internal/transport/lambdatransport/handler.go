@@ -34,14 +34,14 @@ func (h *Handler) Infer(ctx context.Context, req events.APIGatewayV2HTTPRequest)
 	if in.Debug {
 		out, trace, info, err := h.svc.InferWithTraceAndOptions(in.PolicyDOT, in.Input, in.Options())
 		if err != nil {
-			return jsonResp(http.StatusBadRequest, map[string]any{"error": "infer failed", "details": err.Error(), "trace": trace, "policy": info}), nil
+			return jsonResp(http.StatusBadRequest, inferErrorBody(err, trace, info)), nil
 		}
 		return jsonResp(http.StatusOK, inferdto.InferResponse{Output: out, Trace: trace, Policy: info}), nil
 	}
 
 	out, info, err := h.svc.InferWithOptions(in.PolicyDOT, in.Input, in.Options())
 	if err != nil {
-		return jsonResp(http.StatusBadRequest, map[string]any{"error": "infer failed", "details": err.Error(), "policy": info}), nil
+		return jsonResp(http.StatusBadRequest, inferErrorBody(err, nil, info)), nil
 	}
 	return jsonResp(http.StatusOK, inferdto.InferResponse{Output: out, Policy: info}), nil
 }
@@ -60,4 +60,18 @@ func jsonResp(status int, body any) events.APIGatewayV2HTTPResponse {
 		Headers:    map[string]string{"content-type": "application/json"},
 		Body:       string(b),
 	}
+}
+
+func inferErrorBody(err error, trace *app.InferTrace, info *app.PolicyInfo) map[string]any {
+	body := map[string]any{
+		"error":   "infer failed",
+		"details": err.Error(),
+	}
+	if trace != nil {
+		body["trace"] = trace
+	}
+	if info != nil {
+		body["policy"] = info
+	}
+	return body
 }
