@@ -51,16 +51,21 @@ func NewEngine(eval Evaluator, opts ...EngineOption) *Engine {
 	return e
 }
 
+// Run executa a inferencia normal (sem retornar trace), só muta vars com resultado final.
 func (e *Engine) Run(p *Policy, vars map[string]any) error {
 	_, err := e.runInternal(p, vars, nil)
 	return err
 }
 
+// RunWithTrace faz a mesma execução do Run, mas trazendo o caminho todo pra debug.
+// Bom pra explicar porque foi pra um nó e não pro outro.
 func (e *Engine) RunWithTrace(p *Policy, vars map[string]any) (*ExecutionTrace, error) {
 	trace := &ExecutionTrace{}
 	return e.runInternal(p, vars, trace)
 }
 
+// runInternal é o coração da engine:
+// visita nó, aplica result, avalia arestas em ordem e segue a primeira cond true.
 func (e *Engine) runInternal(p *Policy, vars map[string]any, trace *ExecutionTrace) (*ExecutionTrace, error) {
 	if p == nil {
 		return trace, fmt.Errorf("policy is nil")
