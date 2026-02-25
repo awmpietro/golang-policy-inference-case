@@ -15,6 +15,8 @@ type Compiler struct{}
 
 func NewCompiler() *Compiler { return &Compiler{} }
 
+// Compile pega o DOT cru, monta a Policy em memoria e já valida ciclo.
+// Se a policy tiver ruim (parse ou semantica), da um failfast aqui pra nao estourar no runtime.
 func (c *Compiler) Compile(dot string) (*Policy, error) {
 	g, err := gographviz.ParseString(dot)
 	if err != nil {
@@ -73,6 +75,7 @@ func walkStmtList(p *Policy, stmts ast.StmtList) error {
 	return nil
 }
 
+// applyNodeStmt lê o result do nó (ex: approved=true,segment=prime) e guarda no modelo.
 func applyNodeStmt(p *Policy, ns *ast.NodeStmt) error {
 	if ns == nil || ns.NodeID == nil {
 		return nil
@@ -93,6 +96,8 @@ func applyNodeStmt(p *Policy, ns *ast.NodeStmt) error {
 	return nil
 }
 
+// applyEdgeStmt liga os nós e prepara a cond da aresta.
+// A primeira aresta da chain recebe cond; as proximas ficam sem cond (sempre true).
 func applyEdgeStmt(p *Policy, es *ast.EdgeStmt) error {
 	if es == nil {
 		return nil
@@ -160,6 +165,8 @@ func unquote(s string) string {
 	return s
 }
 
+// validateAcyclic roda DFS simples com marcação de cor.
+// Se achar back-edge, já devolve um erro mostrando o caminho do ciclo.
 func validateAcyclic(p *Policy) error {
 	const (
 		unseen = iota

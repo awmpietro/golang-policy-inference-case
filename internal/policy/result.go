@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+// ParseResult converte o atributo result do nó em assignments tipados.
+// Ex: "approved=true,segment=prime" vira []Assignment.
 func ParseResult(raw string) ([]Assignment, error) {
 	raw = strings.TrimSpace(raw)
 	if raw == "" {
@@ -41,6 +43,8 @@ func ParseResult(raw string) ([]Assignment, error) {
 	return out, nil
 }
 
+// parseLiteral tenta adivinhar o tipo do valor na moral:
+// bool -> int -> float -> string quoted -> string crua.
 func parseLiteral(s string) any {
 	s = strings.TrimSpace(s)
 

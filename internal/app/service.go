@@ -56,6 +56,7 @@ func (s *Service) Infer(policyDOT string, input map[string]any) (map[string]any,
 }
 
 func (s *Service) InferWithOptions(policyDOT string, input map[string]any, opts InferOptions) (map[string]any, *PolicyInfo, error) {
+	// Fluxo padrão: valida/prepara, roda engine e devolve output + metadado de policy (se tiver versionamento).
 	p, out, info, err := s.prepare(policyDOT, input, opts)
 	if err != nil {
 		return nil, nil, err
@@ -74,6 +75,7 @@ func (s *Service) InferWithTrace(policyDOT string, input map[string]any) (map[st
 }
 
 func (s *Service) InferWithTraceAndOptions(policyDOT string, input map[string]any, opts InferOptions) (map[string]any, *InferTrace, *PolicyInfo, error) {
+	// Mesmo fluxo do infer normal, só que com trilha de execução pra debug quando o engine suporta trace.
 	p, out, info, err := s.prepare(policyDOT, input, opts)
 	if err != nil {
 		return nil, nil, nil, err
@@ -96,6 +98,7 @@ func (s *Service) InferWithTraceAndOptions(policyDOT string, input map[string]an
 }
 
 func (s *Service) prepare(policyDOT string, input map[string]any, opts InferOptions) (*policy.Policy, map[string]any, *PolicyInfo, error) {
+	// Aqui a gente centraliza validação, cache-key/versionamento e clone defensivo do input.
 	if policyDOT == "" {
 		return nil, nil, nil, fmt.Errorf("policy_dot is required")
 	}

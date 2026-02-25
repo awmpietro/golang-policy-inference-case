@@ -30,6 +30,8 @@ func NewInMemory(max int) *InMemory {
 	}
 }
 
+// GetOrCompute tenta cache-hit rapido e, se der miss, deduplica compute por chave.
+// A ideia é: se 20 reqs chegarem com o mesmo DOT, compila 1 vez só.
 func (c *InMemory) GetOrCompute(dot string, fn func() (*policy.Policy, error)) (*policy.Policy, error) {
 	key := hash(dot)
 
