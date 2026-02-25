@@ -32,14 +32,11 @@ func Validate(cond string) error {
 
 	for i := 0; i < len(cond)-1; i++ {
 		if cond[i] == '(' {
-			// anda pra trás pegando o "token" anterior
 			j := i - 1
 			for j >= 0 && unicode.IsSpace(rune(cond[j])) {
 				j--
 			}
-			// se anterior for letra/_ => possível função: ident(
 			if j >= 0 && (unicode.IsLetter(rune(cond[j])) || cond[j] == '_') {
-				// pega o identificador completo
 				k := j
 				for k >= 0 && (unicode.IsLetter(rune(cond[k])) || unicode.IsDigit(rune(cond[k])) || cond[k] == '_') {
 					k--

@@ -1,4 +1,3 @@
-// internal/policy/result.go
 package policy
 
 import (

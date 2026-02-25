@@ -1,4 +1,3 @@
-// internal/app/service.go
 package app
 
 import (
@@ -48,8 +47,6 @@ func NewService(compiler Compiler, engine Engine, cache Cache) *Service {
 	return &Service{compiler: compiler, engine: engine, cache: cache}
 }
 
-// Infer compila (cacheado) e executa a policy, retornando input+inferidos.
-// Não muta o input original.
 func (s *Service) Infer(policyDOT string, input map[string]any) (map[string]any, error) {
 	out, _, err := s.InferWithOptions(policyDOT, input, InferOptions{})
 	return out, err

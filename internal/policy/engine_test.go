@@ -1,4 +1,3 @@
-// internal/policy/engine_test.go
 package policy
 
 import (
@@ -37,9 +36,6 @@ func TestParseResult(t *testing.T) {
 }
 
 func TestEngine_Run_PicksFirstTrueEdge(t *testing.T) {
-	// start -> A (true)
-	// start -> B (also true)
-	// regra: segue a PRIMEIRA true => A
 	p := &Policy{
 		Start: "start",
 		Nodes: map[string]*Node{
@@ -58,7 +54,6 @@ func TestEngine_Run_PicksFirstTrueEdge(t *testing.T) {
 
 	e := NewEngine(fakeEval{
 		fn: func(cond string, vars map[string]any) (bool, error) {
-			// ambos true
 			return true, nil
 		},
 	})
@@ -98,7 +93,6 @@ func TestEngine_Run_NoEdgeMatchesTerminates(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// não visitou A, então não setou x
 	if _, ok := vars["x"]; ok {
 		t.Fatalf("expected x to be unset, got %#v", vars["x"])
 	}

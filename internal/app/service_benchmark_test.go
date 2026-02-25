@@ -27,7 +27,6 @@ func benchmarkService() *Service {
 func BenchmarkServiceInferCached(b *testing.B) {
 	svc := benchmarkService()
 
-	// Warm cache once so benchmark focuses on inference path.
 	_, err := svc.Infer(benchPolicyDOT, map[string]any{"age": 25, "score": 720})
 	if err != nil {
 		b.Fatalf("warmup infer failed: %v", err)

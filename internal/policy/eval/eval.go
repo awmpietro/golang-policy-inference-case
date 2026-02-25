@@ -1,4 +1,3 @@
-// internal/policy/eval/eval.go
 package eval
 
 import (
@@ -25,7 +24,7 @@ func (e *MissingVariablesError) Error() string {
 	return fmt.Sprintf("missing variables: %s", strings.Join(e.Vars, ", "))
 }
 
-var compileCache sync.Map // map[string]*Compiled
+var compileCache sync.Map
 
 func Compile(cond string) (*Compiled, error) {
 	cond = strings.TrimSpace(cond)
