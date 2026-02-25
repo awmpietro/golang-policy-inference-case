@@ -21,6 +21,7 @@ type CompiledEvaluator interface {
 type Engine struct {
 	eval            Evaluator
 	latencyObserver NodeLatencyObserver
+	maxSteps        int
 }
 
 type EngineOption func(*Engine)
@@ -31,8 +32,19 @@ func WithNodeLatencyObserver(observer NodeLatencyObserver) EngineOption {
 	}
 }
 
+func WithMaxSteps(maxSteps int) EngineOption {
+	return func(e *Engine) {
+		if maxSteps > 0 {
+			e.maxSteps = maxSteps
+		}
+	}
+}
+
 func NewEngine(eval Evaluator, opts ...EngineOption) *Engine {
-	e := &Engine{eval: eval}
+	e := &Engine{
+		eval:     eval,
+		maxSteps: 10_000,
+	}
 	for _, opt := range opts {
 		opt(e)
 	}
@@ -66,9 +78,8 @@ func (e *Engine) runInternal(p *Policy, vars map[string]any, trace *ExecutionTra
 	}
 
 	current := start
-	const maxSteps = 10_000
 
-	for range maxSteps {
+	for range e.maxSteps {
 		nodeStart := time.Now()
 		step := TraceStep{NodeID: current}
 		node := p.Nodes[current]
