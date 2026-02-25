@@ -123,11 +123,7 @@ Variáveis usadas:
 - `POLICY_OBS_BUFFER`: buffer do observer assíncrono
 
 ## Como rodar
-
-### HTTP local
-```bash
-go run ./cmd/http
-```
+Criei dois modos de transporte. AWS Lambda como solicitado nas intruções e também HTTP dockerizado, para facilitar rodar local.
 
 ### Docker
 ```bash
