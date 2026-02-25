@@ -1,4 +1,4 @@
-.PHONY: test test-race test-cover bench bench-profile load-test perf-check docker-build docker-run build-lambda sam
+.PHONY: test test-race test-cover bench bench-profile load-test perf-check docker-build docker-run build-lambda sam sam-warm
 
 test:
 	go test ./...
@@ -34,3 +34,6 @@ build-lambda:
 
 sam: build-lambda
 	sam local start-api
+
+sam-warm: build-lambda
+	sam local start-api --warm-containers EAGER
