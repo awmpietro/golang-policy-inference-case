@@ -1,4 +1,4 @@
-# Golang Policy Inference Case
+# Policy Inference Engine
 
 Serviço de inferência de políticas declarativas representadas como DAG (Graphviz DOT).
 
@@ -132,7 +132,7 @@ Opcional:
 - `jq` para visualizar JSON no terminal
 
 ## Como rodar
-Criei dois modos de transporte. AWS Lambda como solicitado nas intruções e também HTTP dockerizado, para facilitar rodar local.
+Dois modos de transporte: HTTP dockerizado e AWS Lambda.
 
 ### Docker
 ```bash
@@ -193,7 +193,7 @@ Suba o servidor e rode:
 make load-test
 ```
 
-Critério de aceite no load test:
+Metas do load test:
 - `achieved_rps >= 98%` do alvo
 - `p90 < 30ms`
 - `errors = 0`
